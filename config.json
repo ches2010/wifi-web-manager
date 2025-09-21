@@ -39,7 +39,7 @@
         "outboundTag": "blocked"
       },
     ]
-  },
+  }
 
   "dns": {
     "hosts": {
