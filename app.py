@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import subprocess
 import os
+import json
 
 app = Flask(__name__)
 
@@ -35,6 +36,51 @@ def get_status():
         "state": state,
         "current_ssid": current_ssid
     })
+
+@app.route('/ethernet_status')
+def get_ethernet_status():
+    """获取有线网络状态"""
+    try:
+        # 获取所有设备状态
+        code, out, err = run_cmd("nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device status")
+        if code != 0:
+            return jsonify({"error": "无法获取设备状态"})
+
+        ethernet_info = {
+            "interface": "未检测到",
+            "state": "未知",
+            "ip": "无",
+            "connection_name": ""
+        }
+
+        # 查找有线网卡（类型为 ethernet 且不是未托管）
+        for line in out.splitlines():
+            parts = line.split(":")
+            if len(parts) >= 4 and parts[1] == "ethernet" and parts[2] != "unmanaged":
+                interface = parts[0]
+                state = parts[2]
+                connection_name = parts[3]
+
+                # 获取 IP 地址
+                ip = "无"
+                if state == "connected":
+                    code_ip, out_ip, err_ip = run_cmd(f"nmcli -t -f IP4.ADDRESS device show {interface} 2>/dev/null")
+                    if code_ip == 0 and out_ip.strip():
+                        ip_list = out_ip.strip().split('\n')
+                        ip = ip_list[0].split(':')[1] if ':' in ip_list[0] else ip_list[0]
+
+                ethernet_info = {
+                    "interface": interface,
+                    "state": state,
+                    "ip": ip,
+                    "connection_name": connection_name
+                }
+                break  # 取第一个有线网卡
+
+        return jsonify(ethernet_info)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app.route('/scan')
 def scan_wifi():
