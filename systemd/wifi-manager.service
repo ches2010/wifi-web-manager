@@ -1,0 +1,14 @@
+[Unit]
+Description=Flask WiFi Web Manager
+After=network.target NetworkManager.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/wifi-manager
+ExecStart=/usr/bin/python3 /opt/wifi-manager/app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
