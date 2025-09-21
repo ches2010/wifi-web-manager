@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  wifi-manager:
+    build: .
+    container_name: wifi-manager
+    network_mode: host          # 共享宿主机网络（必须！否则 nmcli 无法控制网卡）
+    privileged: true            # 需要权限操作网络设备
+    volumes:
+      - /etc/NetworkManager:/etc/NetworkManager   # 共享 NM 配置
+      - /var/log/vnstat:/var/log/vnstat           # 持久化流量数据
+    restart: unless-stopped
+    environment:
+      - LANG=C.UTF-8
+    command: /app/start-in-docker.sh
