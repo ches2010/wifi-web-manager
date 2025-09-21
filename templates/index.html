@@ -9,6 +9,7 @@
         .card { margin-bottom: 20px; }
         .btn { margin: 5px; }
         .hidden { display: none; }
+        .badge { font-size: 100%; }
         pre { background: #f8f9fa; padding: 10px; border-radius: 5px; }
     </style>
 </head>
@@ -23,6 +24,14 @@
                 <button class="btn btn-outline-primary" onclick="refreshStatus()">🔄 刷新状态</button>
                 <button class="btn btn-outline-success" onclick="toggleWifi('on')">✅ 开启无线</button>
                 <button class="btn btn-outline-danger" onclick="toggleWifi('off')">⛔ 关闭无线</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">🔌 有线网络状态</div>
+            <div class="card-body">
+                <div id="ethernetStatus">加载中...</div>
+                <button class="btn btn-outline-primary" onclick="refreshEthernetStatus()">🔄 刷新</button>
             </div>
         </div>
 
@@ -81,6 +90,27 @@
             }
         }
 
+        async function refreshEthernetStatus() {
+            const data = await apiCall('/ethernet_status');
+            if (data.error) {
+                document.getElementById('ethernetStatus').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+            } else {
+                let statusClass = data.state === 'connected' ? 'success' : 'secondary';
+                document.getElementById('ethernetStatus').innerHTML = `
+                    <p><strong>网卡：</strong> ${data.interface}</p>
+                    <p><strong>状态：</strong> <span class="badge bg-${statusClass}">${data.state}</span></p>
+                    <p><strong>IP 地址：</strong> ${data.ip}</p>
+                    <p><strong>连接名：</strong> ${data.connection_name || '—'}</p>
+                `;
+            }
+        }
+
+        // 页面加载时也刷新有线状态
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+            refreshEthernetStatus(); // ← 新增这一行
+        });
+        
         async function toggleWifi(action) {
             const data = await apiCall('/toggle', { action });
             alert(data.error || data.message);
